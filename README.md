@@ -3,6 +3,12 @@
 This repository provides a plug-in to deal with [TOML
 files](https://toml.io/en/) in [Yorick](http://github.com/LLNL/yorick).
 
+`ytoml` currently uses a patched version of the C parser in
+[toml-c](https://github.com/arp242/toml-c). See
+[toml-c/issues/2](https://github.com/arp242/toml-c/issues/2) for a description
+of the issues fixed for this plug-in. Future plans are to switch to
+[tomlc99](https://github.com/cktan/tomlc99) for parsing TOML.
+
 
 ## Usage
 

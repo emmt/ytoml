@@ -1,4 +1,3 @@
-- `tbl.keys` yields the list of keys for a TOML table `tbl`.
 - Make timestamps Yorick objects.
 - Use `yget_use`, `ypush_use`, and `ydrop_use` to manage the root object.
 - Check for memory leaks and memory allocation errors in TOML

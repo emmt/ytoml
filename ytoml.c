@@ -380,3 +380,52 @@ void Y_toml_type(int argc)
     }
     ypush_int(res);
 }
+
+void Y_toml_length(int argc)
+{
+    if (argc != 1) y_error("expecting exactly one argument");
+    long len = -1;
+    if (yarg_typeid(0) == Y_OPAQUE) {
+        const char* name = yget_obj(0, NULL);
+        if (name == ytoml_table_type.type_name) {
+            ytoml_table* obj = yget_obj(0, &ytoml_table_type);
+            len = toml_table_len(obj->table);
+        } else if (name == ytoml_array_type.type_name) {
+            ytoml_array* obj = yget_obj(0, &ytoml_array_type);
+            len = toml_array_len(obj->array);
+        }
+    }
+    ypush_long(len);
+}
+
+void Y_toml_key(int argc)
+{
+    if (argc != 2) y_error("expecting exactly two arguments");
+    ytoml_table* obj = yget_obj(1, &ytoml_table_type);
+    long idx = ygets_l(0);
+    long len = toml_table_len(obj->table);
+    if (idx <= 0) {
+        // Apply Yorick's indexing rule.
+        idx += len;
+    }
+    char** arr = ypush_q(NULL);
+    if (IN_RANGE(idx, 1, len)) {
+        int keylen;
+        const char* key = toml_table_key(obj->table, idx - 1, &keylen);
+        arr[0] = key == NULL ? NULL : p_strcpy(key);
+    }
+}
+
+void Y_toml_keys(int argc)
+{
+    if (argc != 1) y_error("expecting exactly one arguments");
+    ytoml_table* obj = yget_obj(0, &ytoml_table_type);
+    long len = toml_table_len(obj->table);
+    long dims[2] = {1, len};
+    char** arr = ypush_q(dims);
+    for (long idx = 0; idx < len; ++idx) {
+        int keylen;
+        const char* key = toml_table_key(obj->table, idx, &keylen);
+        arr[idx] = key == NULL ? NULL : p_strcpy(key);
+    }
+}

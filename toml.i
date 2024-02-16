@@ -19,12 +19,23 @@ extern toml_parse_file;
      - an integer represented by a Yorick's `long`;
      - a floating-point represented by a Yorick's `double`;
      - a string represented by a Yorick's `string`;
-     - a timestamp;
      - a TOML table;
-     - a TOML array.
+     - a TOML array;
+     - a TOML timestamp.
 
      A TOML array is similar to a TOML table except that it can only be indexed
      by integers.
+
+     A TOML timestamp, say `ts` has the follwing members:
+     - `ts.year` is the year (a `long`);
+     - `ts.month` is month (a `long`, 1 for January);
+     - `ts.day` is the day of the month (a `long`);
+     - `ts.hour` is the hour  (a `long`);
+     - `ts.minute` is the number of minutes (a `long`);
+     - `ts.second` is the number of seconds with millisecond precision (a `double`);
+     - `ts.tz` the time-zone (a `string`);
+     - `ts.kind` the kind of timestamp (a `char`): 'd'atetime, 'l'local-datetime,
+	   'D'ate-local, or 't'ime-local.
 
      The number of entries in a TOML table or array, say `obj`, is given by
      `obj.len` and Yorick's indexing rules hold, that is `obj(0)` yields the
@@ -42,7 +53,11 @@ extern toml_parse_file;
 extern toml_type;
 /* DOCUMENT id = toml_type(obj);
 
-     Yield 1 if `obj` is a TOML table, 2 if `obj` is a TOML table, and 0 otherwise.
+     The call `toml_type(obj)` yields:
+     • 1 if `obj` is a TOML table,
+     • 2 if `obj` is a TOML array,
+     • 3 if `obj` is a TOML timestamp,
+     • 0 otherwise.
 
    SEE ALSO: `toml_key`, `toml_length`, and `toml_parse`.
  */

@@ -3,6 +3,7 @@ include, "toml.i";
 doc = ("\n" +
        "host = 'example.com'\n" +
        "port = 80\n" +
+       "date = 1979-05-27T07:32:00-08:00\n" +
        "\n" +
        "[tbl]\n" +
        "key = 'value'\n" +
@@ -63,6 +64,61 @@ if (root(keys(2)) == root(2)) {
 } else {
     ++nerrs;
     write, format="FAILURE: `%s`\n", "root(keys(2)) == root(2)";
+}
+ts = root("date");
+if (toml_type(ts) == 3) {
+    ++ntests;
+} else {
+    ++nerrs;
+    write, format="FAILURE: `%s`\n", "toml_type(ts) == 3";
+}
+if (structof(ts.kind) == char) {
+    ++ntests;
+} else {
+    ++nerrs;
+    write, format="FAILURE: `%s`\n", "structof(ts.kind) == char";
+}
+if (structof(ts.year) == long) {
+    ++ntests;
+} else {
+    ++nerrs;
+    write, format="FAILURE: `%s`\n", "structof(ts.year) == long";
+}
+if (structof(ts.month) == long) {
+    ++ntests;
+} else {
+    ++nerrs;
+    write, format="FAILURE: `%s`\n", "structof(ts.month) == long";
+}
+if (structof(ts.day) == long) {
+    ++ntests;
+} else {
+    ++nerrs;
+    write, format="FAILURE: `%s`\n", "structof(ts.day) == long";
+}
+if (structof(ts.hour) == long) {
+    ++ntests;
+} else {
+    ++nerrs;
+    write, format="FAILURE: `%s`\n", "structof(ts.hour) == long";
+}
+if (structof(ts.minute) == long) {
+    ++ntests;
+} else {
+    ++nerrs;
+    write, format="FAILURE: `%s`\n", "structof(ts.minute) == long";
+}
+if (structof(ts.second) == double) {
+    ++ntests;
+} else {
+    ++nerrs;
+    write, format="FAILURE: `%s`\n", "structof(ts.second) == double";
+}
+if (structof(ts.tz) == string) {
+    ++ntests;
+} else {
+    ++nerrs;
+    write, format="FAILURE: `%s`\n", "structof(ts.tz) == string";
 }
 
 // Summary.

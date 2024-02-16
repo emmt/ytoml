@@ -6,8 +6,10 @@
 #include <pstdlib.h>
 #include "toml.h"
 
-
 static char errbuf[256];
+
+/*---------------------------------------------------------------------------*/
+/* TABLES AND ARRAYS */
 
 typedef struct ytoml_root_ {
     toml_table_t* table;
@@ -33,21 +35,7 @@ typedef struct ytoml_array_ {
 static ytoml_table* ytoml_table_push(toml_table_t* table, ytoml_root* root);
 static ytoml_array* ytoml_array_push(toml_array_t* array, ytoml_root* root);
 
-static void free_timestamp(toml_timestamp_t *ts)
-{
-    if (ts != NULL) {
-        /* FIXME not needed with patched version
-        if (ts->z != NULL) {
-            free(ts->z);
-        }*/
-        free(ts);
-    }
-}
-static void push_timestamp(const toml_timestamp_t *ts)
-{
-    fprintf(stderr, "WARNING: timestamp not yet supported");
-    ypush_int(-1);
-}
+static void ytoml_timestamp_push(toml_timestamp_t* ts);
 
 static void push_string(const char* str)
 {
@@ -157,8 +145,7 @@ static void ytoml_table_eval(void* addr, int argc)
     errno = 0;
     val = toml_table_timestamp(obj->table, key);
     if (val.ok) {
-        push_timestamp(val.u.ts);
-        free_timestamp(val.u.ts);
+        ytoml_timestamp_push(val.u.ts);
         return;
     }
     if (errno == ENOMEM) {
@@ -227,8 +214,7 @@ static void ytoml_array_eval(void* addr, int argc)
     errno = 0;
     val = toml_array_timestamp(obj->array, idx);
     if (val.ok) {
-        push_timestamp(val.u.ts);
-        free_timestamp(val.u.ts);
+        ytoml_timestamp_push(val.u.ts);
         return;
     }
     if (errno == ENOMEM) {
@@ -338,6 +324,102 @@ static ytoml_array* ytoml_array_push(toml_array_t* array, ytoml_root* root)
     return obj;
 }
 
+/*---------------------------------------------------------------------------*/
+/* TIMESTAMPS */
+
+static void ytoml_timestamp_free(void* addr)
+{
+    // Nothing to do.
+}
+
+static void ytoml_timestamp_print(void* addr)
+{
+   y_print("TOML Timestamp", 1);
+}
+
+static void ytoml_timestamp_eval(void* addr, int argc)
+{
+    y_error("TOML timestamp is not callable");
+}
+
+static void ytoml_timestamp_extract(void* addr, char* name)
+{
+    toml_timestamp_t* ts = addr;
+    int c0 = name[0], c1;
+    switch (c0) {
+    case 'd':
+        if (strcmp("day", name) == 0) {
+            ypush_long(ts->day);
+            return;
+        }
+        break;
+    case 'h':
+        if (strcmp("hour", name) == 0) {
+            ypush_long(ts->hour);
+            return;
+        }
+        break;
+    case 'k':
+        if (strcmp("kind", name) == 0) {
+            char *arr = ypush_c(NULL);
+            arr[0] = ts->kind;
+            return;
+        }
+        break;
+    case 'm':
+        c1 = name[1];
+        if (c1 == 'o' && strcmp("month", name) == 0) {
+            ypush_long(ts->month);
+            return;
+        }
+        if (c1 == 'i' && strcmp("minute", name) == 0) {
+            ypush_long(ts->minute);
+            return;
+        }
+        break;
+    case 's':
+        if (strcmp("second", name) == 0) {
+            ypush_double(ts->second + ts->millisec/1000.0);
+            return;
+        }
+        break;
+    case 't':
+        if (strcmp("tz", name) == 0) {
+            push_string(ts->z);
+            return;
+        }
+        break;
+    case 'y':
+        if (strcmp("year", name) == 0) {
+            ypush_long(ts->year);
+            return;
+        }
+        break;
+    }
+    y_error("invalid member of TOML array");
+}
+
+y_userobj_t ytoml_timestamp_type = {
+    "toml_timestamp",
+    ytoml_timestamp_free,
+    ytoml_timestamp_print,
+    ytoml_timestamp_eval,
+    ytoml_timestamp_extract,
+    NULL
+};
+
+static void ytoml_timestamp_push(toml_timestamp_t* ts)
+{
+    void* obj = ypush_obj(&ytoml_timestamp_type, sizeof(toml_timestamp_t));
+    if (ts != NULL) {
+        memcpy(obj, ts, sizeof(toml_timestamp_t));
+        free(ts);
+    }
+}
+
+/*---------------------------------------------------------------------------*/
+/* BUILTIN FUNCTIONS */
+
 void Y_toml_parse(int argc)
 {
     if (argc != 1) y_error("expecting exactly one argument");
@@ -376,6 +458,8 @@ void Y_toml_type(int argc)
             res = 1;
         } else if (name == ytoml_array_type.type_name) {
             res = 2;
+        } else if (name == ytoml_timestamp_type.type_name) {
+            res = 3;
         }
     }
     ypush_int(res);

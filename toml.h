@@ -68,7 +68,6 @@ struct toml_value_t {
 	union {
 		toml_timestamp_t *ts; // datetime; must be freed after use.
 		char             *s;  // string value; must be freed after use
-		int              sl;  // string length, excluding NULL.
 		bool             b;   // bool value
 		int64_t          i;   // int value
 		double           d;   // double value

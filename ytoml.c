@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -115,28 +116,56 @@ static void ytoml_table_eval(void* addr, int argc)
         ypush_nil();
         return;
     }
-    toml_value_t val;
-    toml_table_t* tbl;
-    toml_array_t* arr;
-    if ((val = toml_table_bool(obj->table, key)).ok) {
+    // Entry may be a boolean?
+    toml_value_t val = toml_table_bool(obj->table, key);
+    if (val.ok) {
         ypush_int(val.u.b ? 1 : 0);
-    } else if ((val = toml_table_int(obj->table, key)).ok) {
+        return;
+    }
+    // Entry may be an integer?
+    val = toml_table_int(obj->table, key);
+    if (val.ok) {
         ypush_long(val.u.i);
-    } else if ((val = toml_table_double(obj->table, key)).ok) {
+        return;
+    }
+    // Entry may be a float?
+    val = toml_table_double(obj->table, key);
+    if (val.ok) {
         ypush_double(val.u.d);
-    } else if ((val = toml_table_string(obj->table, key)).ok) {
+        return;
+    }
+    // Entry may be a string?
+    val = toml_table_string(obj->table, key);
+    if (val.ok) {
         push_string(val.u.s);
         if (val.u.s != NULL) free(val.u.s);
-    } else if ((val = toml_table_timestamp(obj->table, key)).ok) {
+        return;
+    }
+    // Entry may be an array?
+    toml_array_t* arr = toml_table_array(obj->table, key);
+    if (arr != NULL) {
+        ytoml_array_push(arr, obj->root);
+        return;
+    }
+    // Entry may be a table?
+    toml_table_t* tbl = toml_table_table(obj->table, key);
+    if (tbl != NULL) {
+        ytoml_table_push(tbl, obj->root);
+        return;
+    }
+    // Entry may be a timestamp?
+    errno = 0;
+    val = toml_table_timestamp(obj->table, key);
+    if (val.ok) {
         push_timestamp(val.u.ts);
         free_timestamp(val.u.ts);
-    } else if ((arr = toml_table_array(obj->table, key)) != NULL) {
-        ytoml_array_push(arr, obj->root);
-    } else if ((tbl = toml_table_table(obj->table, key)) != NULL) {
-        ytoml_table_push(tbl, obj->root);
-    } else {
-        ypush_nil();
+        return;
     }
+    if (errno == ENOMEM) {
+        y_error("insufficient memory for timestamp");
+    }
+    // Entry is nothing known or does not exist.
+    ypush_nil();
 }
 
 static void ytoml_array_eval(void* addr, int argc)
@@ -157,28 +186,56 @@ static void ytoml_array_eval(void* addr, int argc)
         y_error("index overreach beyond array bounds");
     }
     --idx; // 1-based index -> 0-based index
-    toml_value_t val;
-    toml_table_t* tbl;
-    toml_array_t* arr;
-    if ((val = toml_array_bool(obj->array, idx)).ok) {
+    // Entry may be a boolean?
+    toml_value_t val = toml_array_bool(obj->array, idx);
+    if (val.ok) {
         ypush_int(val.u.b ? 1 : 0);
-    } else if ((val = toml_array_int(obj->array, idx)).ok) {
+        return;
+    }
+    // Entry may be an integer?
+    val = toml_array_int(obj->array, idx);
+    if (val.ok) {
         ypush_long(val.u.i);
-    } else if ((val = toml_array_double(obj->array, idx)).ok) {
+        return;
+    }
+    // Entry may be a float?
+    val = toml_array_double(obj->array, idx);
+    if (val.ok) {
         ypush_double(val.u.d);
-    } else if ((val = toml_array_string(obj->array, idx)).ok) {
+        return;
+    }
+    // Entry may be a string?
+    val = toml_array_string(obj->array, idx);
+    if (val.ok) {
         push_string(val.u.s);
         if (val.u.s != NULL) free(val.u.s);
-    } else if ((val = toml_array_timestamp(obj->array, idx)).ok) {
+        return;
+    }
+    // Entry may be an array?
+    toml_array_t* arr = toml_array_array(obj->array, idx);
+    if (arr != NULL) {
+        ytoml_array_push(arr, obj->root);
+        return;
+    }
+    // Entry may be a table?
+    toml_table_t* tbl = toml_array_table(obj->array, idx);
+    if (tbl != NULL) {
+        ytoml_table_push(tbl, obj->root);
+        return;
+    }
+    // Entry may be a timestamp?
+    errno = 0;
+    val = toml_array_timestamp(obj->array, idx);
+    if (val.ok) {
         push_timestamp(val.u.ts);
         free_timestamp(val.u.ts);
-    } else if ((arr = toml_array_array(obj->array, idx)) != NULL) {
-        ytoml_array_push(arr, obj->root);
-    } else if ((tbl = toml_array_table(obj->array, idx)) != NULL) {
-        ytoml_table_push(tbl, obj->root);
-    } else {
-        ypush_nil();
+        return;
     }
+    if (errno == ENOMEM) {
+        y_error("insufficient memory for timestamp");
+    }
+    // Entry is nothing known or does not exist.
+    ypush_nil();
 }
 
 static void ytoml_table_extract(void* addr, char* name)

@@ -35,9 +35,10 @@ static ytoml_array* ytoml_array_push(toml_array_t* array, ytoml_root* root);
 static void free_timestamp(toml_timestamp_t *ts)
 {
     if (ts != NULL) {
+        /* FIXME not needed with patched version
         if (ts->z != NULL) {
             free(ts->z);
-        }
+        }*/
         free(ts);
     }
 }

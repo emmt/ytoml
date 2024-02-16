@@ -1,0 +1,6 @@
+*.o
+*.so
+*.dll
+config.log
+Makefile
+ywrap.c

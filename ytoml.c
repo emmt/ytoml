@@ -278,7 +278,7 @@ static void ytoml_array_extract(void* addr, char* name)
     y_error("invalid member of TOML array");
 }
 
-y_userobj_t ytoml_table_type = {
+static y_userobj_t ytoml_table_type = {
     "toml_table",
     ytoml_free,
     ytoml_table_print,
@@ -287,7 +287,7 @@ y_userobj_t ytoml_table_type = {
     NULL
 };
 
-y_userobj_t ytoml_array_type = {
+static y_userobj_t ytoml_array_type = {
     "toml_table",
     ytoml_free,
     ytoml_array_print,
@@ -399,7 +399,7 @@ static void ytoml_timestamp_extract(void* addr, char* name)
     y_error("invalid member of TOML array");
 }
 
-y_userobj_t ytoml_timestamp_type = {
+static y_userobj_t ytoml_timestamp_type = {
     "toml_timestamp",
     ytoml_timestamp_free,
     ytoml_timestamp_print,

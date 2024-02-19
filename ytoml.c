@@ -3,37 +3,39 @@
 #include <stdio.h>
 #include <string.h>
 #include <yapi.h>
+#include <ydata.h>
 #include <pstdlib.h>
 #include "toml.h"
+
+// Debug or not debug, that's the question...
+#ifdef YTOML_DEBUG
+#  define DEBUG(...) do { fprintf(stderr, "DEBUG: " __VA_ARGS__); fflush(stderr); } while(0)
+#else
+#  define  DEBUG(...)
+#endif
 
 static char errbuf[256];
 
 /*---------------------------------------------------------------------------*/
 /* TABLES AND ARRAYS */
 
-typedef struct ytoml_root_ {
-    toml_table_t* table;
-    long nrefs;
-} ytoml_root;
-
-typedef struct ytoml_base_ {
-    ytoml_root* root;
-} ytoml_base;
-
 typedef struct ytoml_table_ {
-    ytoml_root* root;
+    DataBlock*     root; // Yorick object referencing the TOML root table
     toml_table_t* table;
+    int         is_root;
 } ytoml_table;
 
 typedef struct ytoml_array_ {
-    ytoml_root* root;
+    DataBlock*     root; // Yorick object referencing the TOML root table
     toml_array_t* array;
 } ytoml_array;
 
 #define IN_RANGE(x,a,b)  (((a) <= (x)) & ((x) <= (b)))
 
-static ytoml_table* ytoml_table_push(toml_table_t* table, ytoml_root* root);
-static ytoml_array* ytoml_array_push(toml_array_t* array, ytoml_root* root);
+// Push a new TOML table or array with given root table object (NULL if table
+// is a root table).
+static ytoml_table* ytoml_table_push(toml_table_t* table, DataBlock* root);
+static ytoml_array* ytoml_array_push(toml_array_t* array, DataBlock* root);
 
 static void ytoml_timestamp_push(toml_timestamp_t* ts);
 
@@ -43,13 +45,27 @@ static void push_string(const char* str)
     arr[0] = str == NULL ? NULL : p_strcpy(str);
 }
 
-static void ytoml_free(void* addr)
+static void ytoml_table_free(void* addr)
 {
-    ytoml_base* obj = addr;
-    if (obj->root != NULL && --obj->root->nrefs == 0) {
-        // This object is the root table.
-        fprintf(stderr, "DEBUG: freeing TOML root table...\n");
-        toml_free(obj->root->table);
+    ytoml_table* tbl = addr;
+    if (tbl->is_root) {
+        // This object is a root table.
+        DEBUG("free TOML root table at 0x%p with root at 0x%p\n", tbl, tbl->root);
+        toml_free(tbl->table);
+    } else if (tbl->root != NULL) {
+        // This object is not the root table, drop reference on the root
+        // object.
+        DEBUG("free TOML table at 0x%p with root at 0x%p\n", tbl, tbl->root);
+        Unref(tbl->root);
+    }
+}
+
+static void ytoml_array_free(void* addr)
+{
+    ytoml_array* arr = addr;
+    if (arr->root != NULL) {
+        DEBUG("free TOML array at 0x%p with root at 0x%p\n", arr, arr->root);
+        Unref(arr->root);
     }
 }
 
@@ -231,7 +247,7 @@ static void ytoml_table_extract(void* addr, char* name)
     switch (c) {
     case 'i':
         if (strcmp("is_root", name) == 0) {
-            ypush_int(obj->root != NULL && obj->root->table == obj->table);
+            ypush_int(obj->is_root);
             return;
         }
         break;
@@ -243,7 +259,11 @@ static void ytoml_table_extract(void* addr, char* name)
         break;
     case 'r':
         if (strcmp("root", name) == 0) {
-            ytoml_table_push(obj->root->table, obj->root);
+            if (obj->root == NULL) {
+                ypush_nil();
+            } else {
+                ykeep_use(obj->root);
+            }
             return;
         }
         break;
@@ -270,7 +290,11 @@ static void ytoml_array_extract(void* addr, char* name)
         break;
     case 'r':
         if (strcmp("root", name) == 0) {
-            ytoml_table_push(obj->root->table, obj->root);
+            if (obj->root == NULL) {
+                ypush_nil();
+            } else {
+                ykeep_use(obj->root);
+            }
             return;
         }
         break;
@@ -280,7 +304,7 @@ static void ytoml_array_extract(void* addr, char* name)
 
 static y_userobj_t ytoml_table_type = {
     "toml_table",
-    ytoml_free,
+    ytoml_table_free,
     ytoml_table_print,
     ytoml_table_eval,
     ytoml_table_extract,
@@ -288,40 +312,46 @@ static y_userobj_t ytoml_table_type = {
 };
 
 static y_userobj_t ytoml_array_type = {
-    "toml_table",
-    ytoml_free,
+    "toml_array",
+    ytoml_array_free,
     ytoml_array_print,
     ytoml_array_eval,
     ytoml_array_extract,
     NULL
 };
 
-static ytoml_table* ytoml_table_push(toml_table_t* table, ytoml_root* root)
+// Increment reference count of datablock (e.g. opaque) object and return object.
+static inline void* incr_nrefs(void *obj)
 {
-    if (root == NULL) {
-        root = malloc(sizeof(ytoml_root));
-        if (root == NULL) {
-            toml_free(table);
-            y_error("not enough memory");
-        }
-        root->nrefs = 0;
-        root->table = table;
-    }
-    ytoml_table* obj = ypush_obj(&ytoml_table_type, sizeof(ytoml_table));
-    obj->table = table;
-    ++root->nrefs;
-    obj->root = root;
-    return obj;
+    DataBlock* db = obj;
+    return Ref(db);
 }
 
-static ytoml_array* ytoml_array_push(toml_array_t* array, ytoml_root* root)
+static ytoml_table* ytoml_table_push(toml_table_t* table, DataBlock* root)
+{
+    ytoml_table* tbl = ypush_obj(&ytoml_table_type, sizeof(ytoml_table));
+    tbl->table = table;
+   if (root == NULL) {
+        // This table is a root table.
+        tbl->root = sp->value.db; // get opaque handle to Yorick object
+        tbl->is_root = 1;
+        DEBUG("new TOML root table at 0x%p with root at 0x%p\n", tbl, tbl->root);
+    } else {
+        // Keep a reference on the root table object.
+        tbl->root = RefNC(root);
+        DEBUG("new TOML table at 0x%p with root at 0x%p\n", tbl, tbl->root);
+    }
+    return tbl;
+}
+
+static ytoml_array* ytoml_array_push(toml_array_t* array, DataBlock* root)
 {
     if (root == NULL) y_error("TOML array must have a root table");
-    ytoml_array* obj = ypush_obj(&ytoml_array_type, sizeof(ytoml_array));
-    obj->array = array;
-    ++root->nrefs;
-    obj->root = root;
-    return obj;
+    ytoml_array* arr = ypush_obj(&ytoml_array_type, sizeof(ytoml_array));
+    arr->array = array;
+    arr->root = RefNC(root);
+    DEBUG("new TOML array at 0x%p with root at 0x%p\n", arr, arr->root);
+    return arr;
 }
 
 /*---------------------------------------------------------------------------*/

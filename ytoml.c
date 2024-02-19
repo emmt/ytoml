@@ -334,7 +334,37 @@ static void ytoml_timestamp_free(void* addr)
 
 static void ytoml_timestamp_print(void* addr)
 {
-   y_print("TOML Timestamp", 1);
+    toml_timestamp_t* ts = addr;
+    char buffer[64];
+    y_print("TOML Timestamp ", 0);
+    switch (ts->kind) {
+    case 'd':
+        snprintf(buffer, sizeof(buffer),
+                 "(offset datetime): %d-%02d-%02dT%02d:%02d:%02d.%03d%s",
+                 ts->year, ts->month, ts->day,
+                 ts->hour, ts->minute, ts->second, ts->millisec, ts->z);
+        break;
+    case 'l':
+        snprintf(buffer, sizeof(buffer),
+                 "(local datetime): %d-%02d-%02dT%02d:%02d:%02d.%03d",
+                 ts->year, ts->month, ts->day,
+                 ts->hour, ts->minute, ts->second, ts->millisec);
+        break;
+    case 'D':
+        snprintf(buffer, sizeof(buffer), "(local date): %d-%02d-%02d",
+                 ts->year, ts->month, ts->day);
+        break;
+    case 't':
+        snprintf(buffer, sizeof(buffer), "(local time): %02d:%02d:%02d.%03d",
+                 ts->hour, ts->minute, ts->second, ts->millisec);
+        break;
+    default:
+        snprintf(buffer, sizeof(buffer), "(unknown kind = 0x%02x)",
+                 (unsigned)ts->kind);
+        break;
+    }
+    buffer[sizeof(buffer) - 1] = '\0';
+    y_print(buffer, 1);
 }
 
 static void ytoml_timestamp_eval(void* addr, int argc)

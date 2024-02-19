@@ -1,5 +1,6 @@
 plug_dir, dirname(current_include());
-include, "toml.i";
+require, "toml.i";
+require, "testing.i";
 doc = ("\n" +
        "host = 'example.com'\n" +
        "port = 80\n" +
@@ -10,120 +11,91 @@ doc = ("\n" +
        "[tbl.sub]\n" +
        "subkey = 'subvalue'\n" +
        "ints  = [1, 2, 3]\n" +
-       "mixed = [1, 'one', 1.2]\n" +
+       "mixed = [1, 'one', 1.2, true]\n" +
        "\n" +
        "[[aot]]\n" +
        "k = 'one'\n" +
        "[[aot]]\n" +
        "k = 'two'\n");
-nerrs = 0;
-ntests = 0;
+test_init, 1n;
 root = toml_parse(doc);
-if (toml_type(root) == 1) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "toml_type(root) == 1";
-}
-if (toml_length(root) == root.len) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "toml_length(root) == root.len";
-}
+test_eval, "toml_type(root) == 1";
+test_eval, "toml_length(root) == root.len";
 keys = toml_keys(root);
-if (numberof(keys) == root.len) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "numberof(keys) == root.len";
-}
+test_eval, "numberof(keys) == root.len";
 for (i = -1; i <= root.len; ++i) {
-    if (toml_key(root, i) == keys(i)) {
-        ++ntests;
-    } else {
-        ++nerrs;
-        write, format="FAILURE: `%s` with `i = %d`\n",
-            "toml_key(root, i) == keys(i))", i;
-    }
+    test_assert, toml_key(root, i) == keys(i),
+        "TEST FAILED: `%s` with `i = %d`\n",
+        "toml_key(root, i) == keys(i))", i;
 }
-if (toml_key(root, root.len+1) == string()) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "toml_key(root, root.len+1) == string()";
-}
-if (root(keys(1)) == root(1)) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "root(keys(1)) == root(1)";
-}
-if (root(keys(2)) == root(2)) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "root(keys(2)) == root(2)";
-}
+test_eval, "toml_key(root, root.len+1) == string()";
+test_eval, "root(keys(1)) == root(1)";
+test_eval, "root(keys(2)) == root(2)";
+
+// Timestamp.
 ts = root("date");
-if (toml_type(ts) == 3) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "toml_type(ts) == 3";
+test_eval, "toml_type(ts) == 3";
+test_eval, "ts.kind == 'd'";
+test_eval, "structof(ts.kind) == char";
+test_eval, "structof(ts.year) == long";
+test_eval, "structof(ts.month) == long";
+test_eval, "structof(ts.day) == long";
+test_eval, "structof(ts.hour) == long";
+test_eval, "structof(ts.minute) == long";
+test_eval, "structof(ts.second) == double";
+test_eval, "structof(ts.tz) == string";
+
+// Sub-table.
+tbl = root("tbl");
+test_eval, "toml_type(tbl) == 1";
+test_eval, "!tbl.is_root";
+test_eval, "tbl.root == root";
+test_eval, "tbl.len == tbl()";
+
+// Other sub-table.
+tbl_sub = tbl("sub");
+test_eval, "toml_type(tbl_sub) == 1";
+test_eval, "!tbl_sub.is_root";
+test_eval, "tbl_sub.root == root";
+test_eval, "tbl_sub.len == tbl_sub()";
+
+// Array of long's.
+tbl_sub_ints = tbl_sub("ints");
+test_eval, "toml_type(tbl_sub_ints) == 2";
+test_eval, "!tbl_sub_ints.is_root";
+test_eval, "tbl_sub_ints.root == root";
+test_eval, "tbl_sub_ints.len == 3";
+test_eval, "tbl_sub_ints.len == tbl_sub_ints()";
+for (i = 1; i <= tbl_sub_ints.len; ++i) {
+    test_assert, tbl_sub_ints(i) == i,
+        "TEST FAILED: `%s` with `i = %d`\n",
+        "tbl_sub_ints(i) == i", i;
+    test_assert, structof(tbl_sub_ints(i)) == long,
+        "TEST FAILED: `%s` with `i = %d`\n",
+        "structof(tbl_sub_ints(i)) == long", i;
 }
-if (structof(ts.kind) == char) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "structof(ts.kind) == char";
-}
-if (structof(ts.year) == long) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "structof(ts.year) == long";
-}
-if (structof(ts.month) == long) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "structof(ts.month) == long";
-}
-if (structof(ts.day) == long) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "structof(ts.day) == long";
-}
-if (structof(ts.hour) == long) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "structof(ts.hour) == long";
-}
-if (structof(ts.minute) == long) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "structof(ts.minute) == long";
-}
-if (structof(ts.second) == double) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "structof(ts.second) == double";
-}
-if (structof(ts.tz) == string) {
-    ++ntests;
-} else {
-    ++nerrs;
-    write, format="FAILURE: `%s`\n", "structof(ts.tz) == string";
-}
+test_eval, "tbl_sub_ints(0) == tbl_sub_ints(tbl_sub_ints.len)";
+test_eval, "tbl_sub_ints(-1) == tbl_sub_ints(tbl_sub_ints.len - 1)";
+test_eval, "tbl_sub_ints(-2) == tbl_sub_ints(tbl_sub_ints.len - 2)";
+
+// Mixed array.
+tbl_sub_mix = tbl_sub("mixed");
+test_eval, "toml_type(tbl_sub_mix) == 2";
+test_eval, "!tbl_sub_mix.is_root";
+test_eval, "tbl_sub_mix.root == root";
+test_eval, "tbl_sub_mix.len == 4";
+test_eval, "tbl_sub_mix.len == tbl_sub_mix()";
+test_eval, "tbl_sub_mix(1) == 1";
+test_eval, "structof(tbl_sub_mix(1)) == long";
+test_eval, "tbl_sub_mix(2) == \"one\"";
+test_eval, "structof(tbl_sub_mix(2)) == string";
+test_eval, "tbl_sub_mix(3) == 1.2";
+test_eval, "structof(tbl_sub_mix(3)) == double";
+test_eval, "tbl_sub_mix(4) == 1n";
+test_eval, "structof(tbl_sub_mix(4)) == int";
+test_eval, "tbl_sub_mix(0) == tbl_sub_mix(tbl_sub_mix.len)";
+test_eval, "tbl_sub_mix(-1) == tbl_sub_mix(tbl_sub_mix.len - 1)";
+test_eval, "tbl_sub_mix(-2) == tbl_sub_mix(tbl_sub_mix.len - 2)";
 
 // Summary.
-if (nerrs > 0) {
-    write, format="%d failure(s) / %d tests\n", nerrs, ntests;
-} else {
-    write, format="%d tests passed (no failures)\n", ntests;
-}
+test_summary;

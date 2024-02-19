@@ -92,12 +92,16 @@ static void ytoml_array_print(void* addr)
 static void ytoml_table_eval(void* addr, int argc)
 {
     if (argc != 1) y_error("expecting exactly one argument");
-    if (yarg_rank(0) != 0) {
-        bad_arg:
-        y_error("expecting a scalar integer index or a string key");
-    }
     ytoml_table* obj = addr;
     int type = yarg_typeid(0);
+    if (type == Y_VOID) {
+        ypush_long(toml_table_len(obj->table));
+        return;
+    }
+    if (yarg_rank(0) != 0) {
+        bad_arg:
+        y_error("expecting a scalar integer index, a string key, or nothing");
+    }
     const char* key = NULL;
     if (type == Y_STRING) {
         key = ygets_q(0);
@@ -174,13 +178,17 @@ static void ytoml_table_eval(void* addr, int argc)
 static void ytoml_array_eval(void* addr, int argc)
 {
     if (argc != 1) y_error("expecting exactly one argument");
-    int type = yarg_typeid(0);
-    if (!IN_RANGE(type, Y_CHAR, Y_LONG) || yarg_rank(0) != 0) {
-        y_error("expecting a scalar integer index");
-    }
     ytoml_array* obj = addr;
-    long idx = ygets_l(0);
     long len = toml_array_len(obj->array);
+    int type = yarg_typeid(0);
+    if (type == Y_VOID) {
+        ypush_long(len);
+        return;
+    }
+    if (!IN_RANGE(type, Y_CHAR, Y_LONG) || yarg_rank(0) != 0) {
+        y_error("expecting a scalar integer index or nothing");
+    }
+    long idx = ygets_l(0);
     if (idx <= 0) {
         // Apply Yorick's indexing rule.
         idx += len;

@@ -7,11 +7,14 @@ extern toml_parse_file;
 
      Extract a TOML table from a string buffer or from a file.
 
-     Entries in a table can be accessed by an integer index `idx` or by a
-     string `key`:
+     Entries in a table can be accessed by, nothing to yield the number of
+     entries, by an integer index `idx` or by a string `key`:
 
-         val = tbl(key)
-         val = tbl(idx)
+         len = tbl();     // number of entries
+         val = tbl(key);  // entry at string key
+         val = tbl(idx);  // entry at integer index
+         val = tbl(0);    // last entry,
+         val = tbl(-1);   // before last entry, and so on
 
      where the value `val` can be:
 
@@ -43,11 +46,11 @@ extern toml_parse_file;
 
      Other members are:
 
-     - `obj.len` yields the number of entries in `obj`;
+     - `obj.len` and `obj()` yield the number of entries in `obj`;
      - `obj.root` yields the root TOML table to which `obj` belongs to;
      - `obj.is_root` yields whether `obj` is the root TOML table;
 
-   SEE ALSO: `toml_key`, `toml_length`, and ``toml_type`.
+   SEE ALSO: `toml_key`, `toml_length`, and `toml_type`.
  */
 
 extern toml_type;

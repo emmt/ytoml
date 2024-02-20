@@ -237,3 +237,108 @@ func toml_collect(obj, &change, broadcast=)
     }
     return obj;
 }
+
+local toml_format_boolean, toml_format_float, toml_format_integer;
+local toml_format_string, toml_format_timestamp;
+/* DOCUMENT toml_format_boolean(b);
+         or toml_format_float(f);
+         or toml_format_integer(i);
+         or toml_format_string(s);
+         or toml_format_timestamp(t);
+
+     `toml_format_boolean(b)` yields a string suitable to represent the boolean
+     value `b` in a TOML file.
+
+     `toml_format_float(f)` yields a string suitable to represent the
+     floating-point value `f` in a TOML file.
+
+     `toml_format_integer(i)` yields a string suitable to represent the integer
+     value `i` in a TOML file.
+
+     `toml_format_string(s)` yields a string suitable to represent the scalar
+     string `s` in a TOML file.
+
+     `toml_format_timsetamp(t)` yields a string suitable to represent the
+     timestamp `t` in a TOML file.
+
+     For efficiency, it is not checked that the argument is of the correct type:
+     • `b` is a scalar int;
+     • `i` is a scalar integer;
+     • `f` is a scalar float/double;
+     • `s` is a scalar string;
+     • `t` is a TOML timestamp.
+
+   SEE ALSO: toml_parse.
+ */
+
+func toml_format_boolean(b)
+{
+    return b ? "true" : "false";
+}
+
+func toml_format_integer(i)
+{
+    return swrite(format="%ld", i);
+}
+
+func toml_format_float(f)
+{
+    t = ieee_test(f);
+    if (t != 0) {
+        if (t == -1) return "-inf";
+        if (t == +1) return "+inf";
+        if (t == 3 || t == 5) return "nan";
+    }
+    str = swrite(format="%.17g", f);
+    return strglob("*[.eE]*", str) ? str : str + ".0";
+}
+
+_TOML_ESC = array(int, 256);
+_TOML_ESC(1 + '"') = 1n;
+_TOML_ESC(1 + '\b') = 1n;
+_TOML_ESC(1 + '\t') = 1n;
+_TOML_ESC(1 + '\n') = 1n;
+_TOML_ESC(1 + '\f') = 1n;
+_TOML_ESC(1 + '\r') = 1n;
+_TOML_ESC(1 + '\\') = 1n;
+func toml_format_string(s)
+{
+    src = strchar(s);
+    len = numberof(src);
+    dst = array(char, 2*len + 2);
+    j = 1;
+    dst(j) = '"';
+    for (i = 1; i < len /* skip last '\0' */; ++i) {
+        c = src(i);
+        if (_TOML_ESC(1 + c)) {
+            dst(++j) = '\\';
+        }
+        dst(++j) = c;
+    }
+    dst(++j) = '"';
+    return strchar(dst(1:j));
+}
+
+func toml_format_timestamp(t)
+{
+    kind = t.kind;
+    if (kind == 'd') {
+        // offset datetime
+        return swrite(format="%d-%02d-%02dT%02d:%02d:%06.3f%s",
+                      t.year, t.month, t.day,
+                      t.hour, t.minute, t.second, t.tz);
+    } else if (kind == 'l') {
+        // local datetime
+        return swrite(format="%d-%02d-%02dT%02d:%02d:%06.3f",
+                      t.year, t.month, t.day,
+                      t.hour, t.minute, t.second);
+    } else if (kind == 'D') {
+        // local date
+        return swrite(format="%d-%02d-%02d", t.year, t.month, t.day);
+    } else if (kind == 't') {
+        // local time
+        return swrite(format="%02d:%06.3f", t.hour, t.minute, t.second);
+    } else {
+        error, "invalid timestamp kind";
+    }
+}

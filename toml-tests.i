@@ -97,5 +97,15 @@ test_eval, "tbl_sub_mix(0) == tbl_sub_mix(tbl_sub_mix.len)";
 test_eval, "tbl_sub_mix(-1) == tbl_sub_mix(tbl_sub_mix.len - 1)";
 test_eval, "tbl_sub_mix(-2) == tbl_sub_mix(tbl_sub_mix.len - 2)";
 
+// Format.
+test_eval, "toml_format_boolean(0n) == \"false\"";
+test_eval, "toml_format_boolean(1n) == \"true\"";
+test_eval, "toml_format_integer(-257) == \"-257\"";
+test_eval, "toml_format_float(1.0) == \"1.0\"";
+test_eval, "toml_format_float(-1e-8) == \"-1e-08\"";
+test_eval, "toml_format_string(\"hello, Joe\") == \"\\\"hello, Joe\\\"\"";
+test_eval, "toml_format_string(\"Joe's \\\"bar\\\"\") == \"\\\"Joe's \\\\\\\"bar\\\\\\\"\\\"\"";
+test_eval, "toml_format_timestamp(ts) == \"1979-05-27T07:32:00.000-08:00\"";
+
 // Summary.
 test_summary;

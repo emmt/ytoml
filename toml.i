@@ -18,27 +18,27 @@ extern toml_parse_file;
 
      where the value `val` can be:
 
-     - a boolean represented by a Yorick's `int`: `0n` for false, `1n` for true;
-     - an integer represented by a Yorick's `long`;
-     - a floating-point represented by a Yorick's `double`;
-     - a string represented by a Yorick's `string`;
-     - a TOML table;
-     - a TOML array;
-     - a TOML timestamp.
+     • a boolean represented by a Yorick's `int`: `0n` for false, `1n` for true;
+     • an integer represented by a Yorick's `long`;
+     • a floating-point represented by a Yorick's `double`;
+     • a string represented by a Yorick's `string`;
+     • a TOML table;
+     • a TOML array;
+     • a TOML timestamp.
 
      A TOML array is similar to a TOML table except that it can only be indexed
      by integers.
 
      A TOML timestamp, say `ts` has the follwing members:
-     - `ts.year` is the year (a `long`);
-     - `ts.month` is month (a `long`, 1 for January);
-     - `ts.day` is the day of the month (a `long`);
-     - `ts.hour` is the hour  (a `long`);
-     - `ts.minute` is the number of minutes (a `long`);
-     - `ts.second` is the number of seconds with millisecond precision (a `double`);
-     - `ts.tz` the time-zone (a `string`);
-     - `ts.kind` the kind of timestamp (a `char`): 'd'atetime, 'l'local-datetime,
-	   'D'ate-local, or 't'ime-local.
+     • `ts.year` is the year (a `long`);
+     • `ts.month` is month (a `long`, 1 for January);
+     • `ts.day` is the day of the month (a `long`);
+     • `ts.hour` is the hour  (a `long`);
+     • `ts.minute` is the number of minutes (a `long`);
+     • `ts.second` is the number of seconds with millisecond precision (a `double`);
+     • `ts.tz` the time-zone (a `string`);
+     • `ts.kind` the kind of timestamp (a `char`): 'd' for offset datetime, 'l'
+	   for local datetime, 'D' for local date, or 't' for locat time.
 
      The number of entries in a TOML table or array, say `obj`, is given by
      `obj.len` and Yorick's indexing rules hold, that is `obj(0)` yields the
@@ -46,9 +46,9 @@ extern toml_parse_file;
 
      Other members are:
 
-     - `obj.len` and `obj()` yield the number of entries in `obj`;
-     - `obj.root` yields the root TOML table to which `obj` belongs to;
-     - `obj.is_root` yields whether `obj` is the root TOML table;
+     • `obj.len` and `obj()` yield the number of entries in `obj`;
+     • `obj.root` yields the root TOML table to which `obj` belongs to;
+     • `obj.is_root` yields whether `obj` is the root TOML table;
 
    SEE ALSO: `toml_key`, `toml_length`, and `toml_type`.
  */

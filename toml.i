@@ -103,6 +103,14 @@ extern toml_keys;
    SEE ALSO: `toml_length`, `toml_parse`, and `toml_type`.
  */
 
+extern toml_timestamp;
+/* DOCUMENT ts = toml_timestamp();
+
+     `toml_timestamp()` yields a TOML timestamp with the current UTC time.
+
+   SEE ALSO: `toml_parse`.
+ */
+
 func toml_load(filename, broadcast=)
 /* DOCUMENT data = toml_load(filename, broadcast=false);
 

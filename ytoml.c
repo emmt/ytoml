@@ -1,7 +1,10 @@
 #include <errno.h>
-#include <stdlib.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <yapi.h>
 #include <ydata.h>
 #include <pstdlib.h>
@@ -37,7 +40,7 @@ typedef struct ytoml_array_ {
 static ytoml_table* ytoml_table_push(toml_table_t* table, DataBlock* root);
 static ytoml_array* ytoml_array_push(toml_array_t* array, DataBlock* root);
 
-static void ytoml_timestamp_push(toml_timestamp_t* ts);
+static void ytoml_timestamp_push(toml_timestamp_t* ts, bool delete);
 
 static void push_string(const char* str)
 {
@@ -165,7 +168,7 @@ static void ytoml_table_eval(void* addr, int argc)
     errno = 0;
     val = toml_table_timestamp(obj->table, key);
     if (val.ok) {
-        ytoml_timestamp_push(val.u.ts);
+        ytoml_timestamp_push(val.u.ts, true);
         return;
     }
     if (errno == ENOMEM) {
@@ -238,7 +241,7 @@ static void ytoml_array_eval(void* addr, int argc)
     errno = 0;
     val = toml_array_timestamp(obj->array, idx);
     if (val.ok) {
-        ytoml_timestamp_push(val.u.ts);
+        ytoml_timestamp_push(val.u.ts, true);
         return;
     }
     if (errno == ENOMEM) {
@@ -476,12 +479,12 @@ static y_userobj_t ytoml_timestamp_type = {
     NULL
 };
 
-static void ytoml_timestamp_push(toml_timestamp_t* ts)
+static void ytoml_timestamp_push(toml_timestamp_t* ts, bool delete)
 {
     void* obj = ypush_obj(&ytoml_timestamp_type, sizeof(toml_timestamp_t));
     if (ts != NULL) {
         memcpy(obj, ts, sizeof(toml_timestamp_t));
-        free(ts);
+        if (delete) free(ts);
     }
 }
 
@@ -570,7 +573,7 @@ void Y_toml_key(int argc)
 
 void Y_toml_keys(int argc)
 {
-    if (argc != 1) y_error("expecting exactly one arguments");
+    if (argc != 1) y_error("expecting exactly one argument");
     ytoml_table* obj = yget_obj(0, &ytoml_table_type);
     long len = toml_table_len(obj->table);
     long dims[2] = {1, len};
@@ -580,4 +583,28 @@ void Y_toml_keys(int argc)
         const char* key = toml_table_key(obj->table, idx, &keylen);
         arr[idx] = key == NULL ? NULL : p_strcpy(key);
     }
+}
+
+void Y_toml_timestamp(int argc)
+{
+    if (argc != 1) y_error("expecting exactly one nil argument");
+
+    // Get current UTC time. Copy fields immediately to avoid private data
+    // being overwritten by another call.
+    time_t t = time(NULL);
+    if (t == (time_t)-1) y_error("failure in C function time()");
+    struct tm *tm = gmtime(&t);
+    toml_timestamp_t ts;
+    ts.kind   = 'd';
+    ts.year   = tm->tm_year + 1900;
+    ts.month  = tm->tm_mon + 1;
+    ts.day    = tm->tm_mday;
+    ts.hour   = tm->tm_hour;
+    ts.minute = tm->tm_min;
+    ts.second = tm->tm_sec;
+    memset(ts.z, 0, sizeof(toml_timestamp_t) - offsetof(toml_timestamp_t, z));
+    ts.z[0] = 'Z';
+
+    // Create timestamp object.
+    ytoml_timestamp_push(&ts, false);
 }

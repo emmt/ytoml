@@ -6,4 +6,5 @@ autoload, "toml.i",
     toml_keys,
     toml_parse,
     toml_parse_file,
+    toml_timestamp,
     toml_type;

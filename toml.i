@@ -53,17 +53,22 @@ extern toml_parse_file;
    SEE ALSO: `toml_key`, `toml_length`, and `toml_type`.
  */
 
+local TOML_OTHER, TOML_TABLE, TOML_ARRAY, TOML_TIMESTAMP;
 extern toml_type;
 /* DOCUMENT id = toml_type(obj);
 
      The call `toml_type(obj)` yields:
-     • 1 if `obj` is a TOML table,
-     • 2 if `obj` is a TOML array,
-     • 3 if `obj` is a TOML timestamp,
-     • 0 otherwise.
+     • `TOML_TABLE` (1) if `obj` is a TOML table,
+     • `TOML_ARRAY` (2) if `obj` is a TOML array,
+     • `TOML_TIMESTAMP` (3) if `obj` is a TOML timestamp,
+     • `TOML_OTHER` (0) otherwise.
 
    SEE ALSO: `toml_key`, `toml_length`, and `toml_parse`.
  */
+TOML_OTHER     = 0n;
+TOML_TABLE     = 1n;
+TOML_ARRAY     = 2n;
+TOML_TIMESTAMP = 3n;
 
 extern toml_length;
 /* DOCUMENT n = toml_length(obj);

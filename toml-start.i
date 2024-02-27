@@ -4,7 +4,7 @@ autoload, "toml.i",
     toml_format_float,
     toml_format_integer,
     toml_format_string,
-    toml_format_timestamp;
+    toml_format_timestamp,
     toml_key,
     toml_keys,
     toml_length,

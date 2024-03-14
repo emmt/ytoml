@@ -467,7 +467,7 @@ static void ytoml_timestamp_extract(void* addr, char* name)
         }
         break;
     }
-    y_error("invalid member of TOML array");
+    y_error("invalid member of TOML timestamp");
 }
 
 static y_userobj_t ytoml_timestamp_type = {

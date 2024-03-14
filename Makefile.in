@@ -22,8 +22,6 @@ PKG_I=$(srcdir)/toml.i
 
 OBJS = toml.o ytoml.o
 
-YTAO_DEPS = $(srcdir)/ytao.h $(srcdir)/macros.h $(TAO_INCDIR)/tao-errors.h
-
 # change to give the executable a name other than yorick
 PKG_EXENAME = yorick
 

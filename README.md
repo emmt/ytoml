@@ -143,7 +143,7 @@ More detailed installation explanations are given below.
    `--deplibs` may be used to specify additional options for the
    preprocessor, the compiler, and the linker.
 
-To compile in a **different build directory**, say `$BUILD_DIR`, create the
+   To compile in a **different build directory**, say `$BUILD_DIR`, create the
    build directory, go to the build directory and run the configuration script:
 
    ``` sh

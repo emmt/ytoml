@@ -78,6 +78,27 @@ which yields `1` if `obj` is a TOML table, `2` if `obj` is a TOML table, and
 
 ## Installation
 
+### Prerequisites
+
+To install this plug-in, you must have [Yorick](http://github.com/LLNL/yorick)
+and Git installed on your machine.
+
+
+### Installation with `EasyYorick`
+
+The easiest installation is to use
+[`EasyYorick`](https://github.com/emmt/EasyYorick) for installing Yorick and
+this plug-in (and many others). Assuming `EasyYorick` has been installed,
+installing the `YTOML` plug-in is as simple as:
+
+``` sh
+ypkg update ypkg
+ypkg install ytoml
+```
+
+
+### Manual installation
+
 In short, building and installing the plug-in can be as quick as:
 
 ``` sh
@@ -93,11 +114,14 @@ can be the same in which case, call `./configure` to configure for building.
 
 More detailed installation explanations are given below.
 
-1. You must have Yorick and GIT installed on your machine. You may consider
-   using [EasyYorick](https://github.com/emmt/EasyYorick) for installing
-   Yorick.
+1. You must have [Yorick](http://github.com/LLNL/yorick) and Git installed on
+   your machine.
 
-2. Unpack the software code somewhere or clone the Git repository.
+2. Unpack the software code somewhere or clone the Git repository with:
+
+   ```sh
+   git clone https://github.com/emmt/ytoml
+   ```
 
 3. Configure for compilation.  There are two possibilities:
 
@@ -115,7 +139,11 @@ More detailed installation explanations are given below.
    ./configure --help
    ```
 
-   To compile in a **different build directory**, say `$BUILD_DIR`, create the
+   In particular the options `CPPFLAGS=...`, `CFLAGS=...`, and `LDFLAGS=...` or
+   `--deplibs` may be used to specify additional options for the
+   preprocessor, the compiler, and the linker.
+
+To compile in a **different build directory**, say `$BUILD_DIR`, create the
    build directory, go to the build directory and run the configuration script:
 
    ``` sh

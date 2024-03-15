@@ -26,7 +26,7 @@ OBJS = toml.o ytoml.o
 PKG_EXENAME = yorick
 
 # PKG_DEPLIBS=-Lsomedir -lsomelib   for dependencies of this package
-PKG_DEPLIBS = $(TAO_LIBS) @PKG_DEPLIBS@
+PKG_DEPLIBS = @PKG_DEPLIBS@
 # set compiler (or rarely loader) flags specific to this package
 PKG_CFLAGS = @PKG_CFLAGS@
 PKG_LDFLAGS = @PKG_LDFLAGS@
@@ -92,7 +92,7 @@ dummy-default:
 	@echo >&2 "*** ERROR: Y_MAKEDIR not defined, aborting..."; false
 
 %.o: %.c
-	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(CFLAGS) -o $@ -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 
 # simple example:
 #myfunc.o: myapi.h

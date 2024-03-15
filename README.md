@@ -92,7 +92,7 @@ this plug-in (and many others). Assuming `EasyYorick` has been installed,
 installing the `YTOML` plug-in is as simple as:
 
 ``` sh
-ypkg update ypkg
+ypkg upgrade ypkg
 ypkg install ytoml
 ```
 

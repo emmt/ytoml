@@ -1,4 +1,3 @@
-plug_dir, dirname(current_include());
 require, "toml.i";
 require, "testing.i";
 doc = ("\n" +

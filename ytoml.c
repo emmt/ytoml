@@ -342,7 +342,7 @@ static ytoml_table* ytoml_table_push(toml_table_t* table, DataBlock* root)
 {
     ytoml_table* tbl = ypush_obj(&ytoml_table_type, sizeof(ytoml_table));
     tbl->table = table;
-   if (root == NULL) {
+    if (root == NULL) {
         // This table is a root table.
         tbl->root = sp->value.db; // get opaque handle to Yorick object
         tbl->is_root = 1;
@@ -494,7 +494,17 @@ static void ytoml_timestamp_push(toml_timestamp_t* ts, bool delete)
 void Y_toml_parse(int argc)
 {
     if (argc != 1) y_error("expecting exactly one argument");
-    char* buffer = ygets_q(0);
+    int type = yarg_typeid(0);
+    int rank = yarg_rank(0);
+    char* buffer;
+    if (type == Y_STRING && rank == 0) {
+        buffer = ygets_q(0);
+    } else if (type == Y_CHAR && rank == 1) {
+        buffer = ygeta_c(0, NULL, NULL);
+    } else {
+        buffer = NULL;
+        y_error("expecting a stting or a vector of bytes");
+    }
     toml_table_t* table = toml_parse(buffer, errbuf, sizeof(errbuf));
     if (table == NULL) {
         y_error(errbuf);

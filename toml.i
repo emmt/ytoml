@@ -5,7 +5,7 @@ extern toml_parse_file;
 /* DOCUMENT tbl = toml_parse(buffer);
          or tbl = toml_parse_file(filename);
 
-     Extract a TOML table from a string buffer or from a file.
+     Extract a TOML table from a string, a byte buffer, or a file.
 
      Entries in a table can be accessed by, nothing to yield the number of
      entries, by an integer index `idx` or by a string `key`:

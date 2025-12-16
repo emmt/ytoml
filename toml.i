@@ -165,7 +165,8 @@ func toml_collect(obj, &change, broadcast=)
     if (is_mvect(obj)) {
         // Attempt to convert "mixed vector" into a regular array.
         len = obj.len;
-        common_type = -1; // common type identifier or -1 if none
+        common_ident = -1; // common type identifier or -1 if none
+        common_struct = char;
         change_here = 0n; // any change in this stage?
         vec = mvect_create(len); // other mixed vector to store collected entries
         for (i = 1; i <= len; ++i) {
@@ -174,16 +175,17 @@ func toml_collect(obj, &change, broadcast=)
             eq_nocopy, b, toml_collect(a, change_here, broadcast=broadcast);
             vec, i, b;
             if (i == 1) {
-                common_type = identof(b);
-            } else if (identof(b) != common_type) {
-                common_type = -1;
+                common_ident = identof(b);
+                common_struct = structof(b);
+            } else if (identof(b) != common_ident) {
+                common_ident = -1;
             }
         }
         if (change_here) {
             eq_nocopy, obj, vec;
             change = 1n;
         }
-        if (common_type >= Y_CHAR && common_type <= Y_POINTER) {
+        if (common_ident >= Y_CHAR && common_ident <= Y_POINTER) {
             // Determine common dimensions.
             common_dims = dimsof(obj(1));
             common_rank = numberof(common_dims);
@@ -226,7 +228,7 @@ func toml_collect(obj, &change, broadcast=)
             if (compat) {
                 // Mixed vector can be converted into an ordinary array.
                 common_dims(1) = common_rank - 1;
-                arr = array(common_type, common_dims, len);
+                arr = array(common_struct, common_dims, len);
                 for (i = 1; i <= len; ++i) {
                     arr(..,i) = obj(i);
                 }
